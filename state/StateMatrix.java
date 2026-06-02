@@ -67,7 +67,7 @@ public class StateMatrix {
         N[0][1] = (2 * (1 - c)) / n;
         N[0][2] = 0;
         N[1][0] = - (2 * (1 - c)) / n;
-        N[1][1] = ((4 * s) - (n * t)) / n;
+        N[1][1] = ((4 * s) - (3 * n * t)) / n;
         N[1][2] = 0;
         N[2][0] = 0;
         N[2][1] = 0;
@@ -79,11 +79,12 @@ public class StateMatrix {
         double[][] Ninv = new double[3][3];
         // for convenience, apply determinant to each term
         double det = n / ((8 * s * s * s) - (3 * s * s * n * t));
-        Ninv[0][0] = ((4 * s * s) - (3 * s * n * t)) / det;
-        Ninv[0][1] = (-2 * s * (1 - c)) / det;
+        // System.err.printf("det: %8.8f\n\n", det);
+        Ninv[0][0] = ((4 * s * s) - (3 * s * n * t)) * det;
+        Ninv[0][1] = (-2 * s * (1 - c)) * det;
         Ninv[0][2] = 0;
-        Ninv[1][0] = ((2 * s * (1 - c))) / det;
-        Ninv[1][1] = (s * s) / det;
+        Ninv[1][0] = ((2 * s * (1 - c))) * det;
+        Ninv[1][1] = (s * s) * det;
         Ninv[1][2] = 0;
         Ninv[2][0] = 0;
         Ninv[2][1] = 0;
@@ -102,7 +103,7 @@ public class StateMatrix {
         S[1][2] = 0;
         S[2][0] = 0;
         S[2][1] = 0;
-        S[2][2] = n * s;
+        S[2][2] = -(n * s);
         return S;
     } 
 
@@ -116,7 +117,7 @@ public class StateMatrix {
         T[1][2] = 0;
         T[2][0] = 0;
         T[2][1] = 0; 
-        T[2][1] = c;
+        T[2][2] = c;
         return T;
     }
 
@@ -130,8 +131,8 @@ public class StateMatrix {
         double[][] prod = new double[3][3];
         for(int i = 0; i < 3; i++) {
             for(int j = 0; j < 3; j++) {
+                prod[i][j] = 0;
                 for(int k = 0; k < 3; k++) {
-                    prod[i][j] = 0;
                     prod[i][j] += o1[i][k] * o2[k][j];
                 }
             }
@@ -214,14 +215,57 @@ public class StateMatrix {
         return r;
     }
 
+    private void printMatrix(double[][] m) {
+        for(int i = 0; i < 3; i++) {
+            System.out.print("\t\t| ");
+            for(int j = 0; j < 3; j++) {
+                System.out.printf("%4.4f ", m[i][j]);
+            }
+            System.out.println("|");
+        }
+        System.out.println();
+    }
+
+    private void printVector(double[] v) {
+        for(int i = 0; i < v.length; i++) {
+            System.out.printf("\t\t| %4.4f |\n", v[i]);
+        }
+        System.out.println();
+    }
+
 
     public double[] initialImpulse(double[] dr0, double[] dv0) {
+        //System.out.printf("n = %4.4f\t\ts = %4.4f\t\tt = %4.4f\n", n, s, t_f);
+        //double[][] test1 = matrixMultiply(N_f, N_inv_f);
+        //System.out.println("Ninv N = I?");
+        //printMatrix(test1);
+        // System.out.println("T: ");
+        // printMatrix(T_f);
+        // System.out.println("S: ");
+        // printMatrix(S_f);
         double[][] m = new double[3][3];
+        //System.out.println("N");
+        //printMatrix(N_f);
+        //System.out.println("N inverse: ");
+        //printMatrix(N_inv_f);
+        //System.out.println("M");
+        //printMatrix(M_f);
+        //double[] test2 = matrixTransform(M_f, dr0);
+        //System.out.println("testing different order: ");
+        //printVector(test2);
+        //test2 = matrixTransform(N_inv_f, test2);
+        //printVector(test2);
         m = matrixMultiply(N_inv_f, M_f);
         double[] v = new double[3];
         v = matrixTransform(m, dr0);
         v = invertVector(v);
         v = vectorSub(v, dv0);
+        double dv_test = 0;
+        for(int i = 0; i < 3; i++) {
+            dv_test += v[i] * v[i];
+        }
+        dv_test = Math.sqrt(dv_test);
+        // System.out.printf("abs value delta v: %4.4f", dv_test);
         return v;
     }
 
@@ -232,6 +276,16 @@ public class StateMatrix {
         m = matrixSub(m, S_f);
         double[] v = new double[3];
         v = matrixTransform(m, dr0);
+        /*
+        System.out.println("end impulse: ");
+        printVector(v);
+        double foo = 0;
+        for(int i = 0; i < 3; i++) {
+            foo += v[i] * v[i];
+        }
+        foo = Math.sqrt(foo);
+        System.out.printf("abs value end impulse: %4.6f\n\n", foo);
+        // */
         return v;
     }
 
