@@ -22,14 +22,15 @@ class TestOrbit {
         double[][] res1 = test2.getImpulse(t1, rv2);
         double dv_val = 0;
         double dv_val2 = 0;
-        for(int i = 0; i < 3; i++) {
+        for(int i = 1; i < 4; i++) {
             dv_val += res1[0][i] * res1[0][i];
             dv_val2 += res1[1][i] * res1[1][i];
         }
         dv_val = Math.sqrt(dv_val);
-        dv_val = Math.sqrt(dv_val2);
-        System.out.printf("delta v initial: %4.4f\n", dv_val);
-        System.out.printf("delta v final: %4.4f\n", dv_val2);
+        dv_val2 = Math.sqrt(dv_val2);
+        System.out.printf("impulse, initial t: %4.4f, dv: %4.4f\n", res1[0][0], dv_val);
+        System.out.printf("impulse, final t: %4.4f, dv: %4.4f\n", res1[1][0], dv_val2);
+        printResult(res1);
 
         
 
@@ -37,4 +38,13 @@ class TestOrbit {
     }
 
 
+    private static void printResult(double[][] r) {
+        for(int i = 0; i < 2; i++) {
+            System.out.printf("t: %4.4f, [ ", r[i][0]);
+            for(int j = 1; j < 4; j++) {
+                System.out.printf("%4.4f\t ", r[i][j]);
+            }
+            System.out.println("]");
+        }
+    }
 }

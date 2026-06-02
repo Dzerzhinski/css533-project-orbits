@@ -21,6 +21,12 @@ class Orbit {
 
     private StateMatrix state;
 
+    ///////////////////////////////////////////////////////
+    //                                                   // 
+    // CONSTRUCTORS                                      //
+    //                                                   //
+    ///////////////////////////////////////////////////////
+    
     Orbit() {
 
     }
@@ -62,14 +68,35 @@ class Orbit {
         this.n_mean = Math.sqrt(MU / (a * a * a));
     }
 
-    private double getNorm(double[] v) {
-        double res = 0;
-        for(int i = 0; i < v.length; i++) {
-            res += v[i] * v[i];
-        }
-        return Math.sqrt(res);
+    ///////////////////////////////////////////////////////
+    //                                                   //
+    // PUBLIC METHODS                                    //
+    //                                                   //
+    ///////////////////////////////////////////////////////
+    
+    /*
+     * Get impulse vectors (initial and final) for orbit state 
+     *      transition.  Defaults to half-orbit period for 
+     *      transition.
+     * @param stateVec orbit state vector
+     * @return array with initial and final impulse vectors
+     *          [[time initial, <impulse vector], 
+     *           [time final, <impulse vector>]]
+     */
+    public double[][] getImpulse(double[] stateVec) {
+        // half orbit period
+        double t_f = Math.PI / n_mean;
+        return getImpulse(t_f, stateVec);
     }
 
+    /*
+     * Get impulse vectors (initial and final) for orbit state transition 
+     *      at given time.
+     * @param t_f time for intercept (from now)
+     * @param stateVec orbit state vector ([position velocity])
+     * @return array, [[<inital time, <impulse vector>], 
+     *                 [<final time, <impulse vector>]]
+     */
     public double[][] getImpulse(double t_f, double[] stateVec) {
         this.state = new StateMatrix(t_f, n_mean);
         Frame refFrame = new Frame();
@@ -93,7 +120,7 @@ class Orbit {
         double[] impulse1 = state.initialImpulse(tfmPosVec, tfmVelVec);
         double[] impulse1t = refFrame.transformdVFromFrame(impulse1);
         // printVector(impulse1);
-        // printVector(impulse1t);
+        //printVector(impulse1t);
         double i1fnorm = getNorm(impulse1);
         double i1tnorm = getNorm(impulse1t);
         // System.out.printf("impulse 1, mag: %4.6f\n", i1fnorm);
@@ -104,17 +131,72 @@ class Orbit {
         double[] impulse2 = state.endImpulse(tfmPosVec);
         double[] impulse2t = refFrame2.transformdVFromFrame(impulse2);
         // printVector(impulse2);
-        // printVector(impulse2t);
+        //printVector(impulse2t);
         double i2fnorm = getNorm(impulse2);
         double i2tnorm = getNorm(impulse2t);
-        // System.out.printf("impulse 2, mag: %4.6f\n", i2fnorm);
-        // System.out.printf("impulse 2 tfm, mag: %4.6f\n\n", i2tnorm);
-        double[][] res = new double[2][3];
+        //System.out.printf("impulse 2, mag: %4.6f\n", i2fnorm);
+        //System.out.printf("impulse 2 tfm, mag: %4.6f\n\n", i2tnorm);
+        double[][] res = new double[2][4];
+        res[0][0] = 0.0;
+        res[1][0] = t_f;
         for(int i = 0; i < 3; i++) {
-            res[0][i] = impulse1t[i];
-            res[1][i] = impulse2t[i];
+            res[0][i + 1] = impulse1t[i];
+            res[1][i + 1] = impulse2t[i];
         }
         return res;
+    }
+
+    ///////////////////////////////////////////////////////
+    //                                                   //
+    // TEST METHODS                                      //
+    //                                                   //
+    ///////////////////////////////////////////////////////
+    
+    /*
+     * Test out solver for f at time t.
+     * @param t time parameter
+     * @return f (true anomaly) at time t
+     */
+    public double testFindfAtTime(double t) { return findfAtTime(t); }
+
+    /*
+     * Get basis (transform) matrix for orbit reference frame.  
+     *      Gets basis matrix and prints to stdout.
+     */
+    public void testBasis() {
+        Frame frame = new Frame();
+        double[][] test = frame.testBasisMatrix();
+        System.out.println("Basis matrix: ");
+        printMatrix(test);
+        System.out.println();
+    }
+
+    /*
+     * Test transform of position and velocity vectors to orbit 
+     *      reference frame.  Transforms state vector and 
+     *      prints to stdout.
+     * @param pos position vector
+     * @param vel velocity vector
+     */
+    public void testTransform(double[] pos, double[] vel) {
+        System.out.println("Testing transform: ");
+        Frame frame = new Frame();
+        double[] orbitVec = frame.transformToFrame(pos, vel);
+        printVector(orbitVec);
+    }
+ 
+    ///////////////////////////////////////////////////////
+    //                                                   //
+    // HELPER METHODS                                    //
+    //                                                   //
+    ///////////////////////////////////////////////////////
+
+    private double getNorm(double[] v) {
+        double res = 0;
+        for(int i = 0; i < v.length; i++) {
+            res += v[i] * v[i];
+        }
+        return Math.sqrt(res);
     }
 
 
@@ -172,14 +254,6 @@ class Orbit {
         
     }
 
-    /*
-     * Test out solver for f at time t.
-     */
-    public double testFindfAtTime(double t) {
-        return findfAtTime(t);
-    }
-
-
     private double findEAtTime(double t) {
         // Newton's method: 
         //      E_(i+1) = E_i - (F(E) / F'(E))
@@ -219,21 +293,7 @@ class Orbit {
         System.out.println();
     }
 
-    public void testBasis() {
-        Frame frame = new Frame();
-        double[][] test = frame.testBasisMatrix();
-        System.out.println("Basis matrix: ");
-        printMatrix(test);
-        System.out.println();
-    }
-
-    public void testTransform(double[] pos, double[] vel) {
-        System.out.println("Testing transform: ");
-        Frame frame = new Frame();
-        double[] orbitVec = frame.transformToFrame(pos, vel);
-        printVector(orbitVec);
-    }
-        
+       
 
 
 
