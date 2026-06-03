@@ -154,6 +154,20 @@ class Orbit
     //                                                   //
     ///////////////////////////////////////////////////////
     
+    public void printFields() {
+        System.out.printf("position: [%4.4f, %4.4f, %4.4f]\n", r[0], r[1], r[2]);
+        System.out.printf("velocity: [%4.4f, %4.4f, %4.4f]\n", v[0], v[1], v[2]);
+        System.out.printf("semi major axis: %4.4f\n", this.a);
+        System.out.printf("eccentricity: %4.4f\n", this.e);
+        System.out.printf("inclination: %4.4f\n", this.i);
+        System.out.printf("node of right ascension: %4.4f\n", this.O);
+        System.out.printf("argument of periapse: %4.4f\n", this.o);
+        System.out.printf("true anomaly: %4.4f\n", this.f);
+        System.out.printf("mean anomaly: %4.4f\n", this.M);
+        return;
+    }
+
+
     /*
      * Test out solver for f at time t.
      * @param t time parameter
