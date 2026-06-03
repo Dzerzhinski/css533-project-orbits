@@ -7,6 +7,7 @@ class TestVessel {
     private double[] pos; 
     private double[] vel; 
     private int orbit_id;
+    private String orbit_name;
 
     private Random rng;
 
@@ -17,6 +18,7 @@ class TestVessel {
         this.pos = new double[]{state[0], state[1], state[2]};
         this.vel = new double[]{state[3], state[4], state[5]};
         this.orbit_id = o.getId();
+        this.orbit_name = o.getName();
         this.rng = new Random();
     }
 
