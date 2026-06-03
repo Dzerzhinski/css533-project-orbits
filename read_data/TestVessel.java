@@ -20,6 +20,8 @@ class TestVessel {
         this.rng = new Random();
     }
 
+    public int getOrbitId() { return this.orbit_id; }
+
     public double[] randStateVector() {
         double[] r_pos = randVector(0.01, this.pos);
         double[] r_vel = randVector(1.0, this.vel);
