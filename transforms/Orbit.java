@@ -1,6 +1,8 @@
 import java.lang.Math;
+import java.io.Serializable;
 
-class Orbit {
+class Orbit 
+        implements Serializable {
 
     private double[] r;
     private double[] v; 

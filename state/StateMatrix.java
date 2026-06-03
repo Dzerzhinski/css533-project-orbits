@@ -1,7 +1,9 @@
 import java.lang.Math;
+import java.io.Serializable;
 
 
-public class StateMatrix {
+public class StateMatrix 
+        implements Serializable {
 
     /*
     // Don't think I need these, state matrix a t=0.
