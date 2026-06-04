@@ -86,9 +86,7 @@ class Orbit
      *           [time final, <impulse vector>]]
      */
     public double[][] getImpulse(double[] stateVec) {
-        // half orbit period
-        double t_f = Math.PI / n_mean;
-        return getImpulse(t_f, stateVec);
+        return getImpulse(0.0, stateVec);
     }
 
     /*
@@ -99,7 +97,19 @@ class Orbit
      * @return array, [[<inital time, <impulse vector>], 
      *                 [<final time, <impulse vector>]]
      */
-    public double[][] getImpulse(double t_f, double[] stateVec) {
+    public double[][] getImpulse(double tf_req, double[] stateVec) {
+        double t_f;
+        if(tf_req == 0.0) {
+            t_f = getThreeQuarterOrbit();
+        } else {
+            t_f = tf_req;
+        }
+        if(Math.sin(t_f * n_mean) < EPSILON) {
+            t_f += 2 * Math.asin(EPSILON);
+        }
+
+        // double t_f = (tf_req < EPSILON) ? getHalfOrbitPeriod() : tf_req;
+        System.err.printf("t_f: %4.4f\n", t_f);
         this.state = new StateMatrix(t_f, n_mean);
         Frame refFrame = new Frame();
         double[] posVec = new double[]{stateVec[0], stateVec[1], stateVec[2]};
@@ -206,6 +216,10 @@ class Orbit
     // HELPER METHODS                                    //
     //                                                   //
     ///////////////////////////////////////////////////////
+
+    private double getThreeQuarterOrbit() {
+        return (3 * Math.PI) / (2 * n_mean);
+    }
 
     private double getNorm(double[] v) {
         double res = 0;
