@@ -1,28 +1,50 @@
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 class TestOrbitInfo {
 
     public static void main(String args[]) {
         DataReader reader = new DataReader("../data/test_data.txt");
-        while(true) {
-            
-            OrbitInfo oi = reader.getOrbitData();
-            if(oi == null) {
-                break;
-            }
-            TestVessel foo = new TestVessel(oi);
-
-            
+        Map<Integer, OrbitInfo> map = new HashMap<Integer, OrbitInfo>();
+        OrbitInfo oi = reader.getOrbitData();
+        while(oi != null) {
             System.out.println("orbit id: " + (oi.getId()));
             System.out.println("object name: " + oi.getName());
-            Orbit o = oi.makeOrbit();
-            o.printFields();
-            System.out.println();
-            double[] rState = foo.randStateVector();
-            printStateVector(rState);
-            System.out.println();
-            double[][] xfer = o.getImpulse(0.0, rState);
-            printResults(xfer);
+            map.put(oi.getId(), oi);
+            oi = reader.getOrbitData();
         }
+        List<SpaceObject> spaceObjL = new ArrayList<SpaceObject>();
+        DataReader objReader = new DataReader("../data/random-objects.txt");
+        SpaceObject spaceObj = objReader.getSpaceObject();
+        while(spaceObj != null) {
+            spaceObjL.add(spaceObj);
+            spaceObj = objReader.getSpaceObject();
+        }
+
+        for(SpaceObject so : spaceObjL) {
+            int orbId = so.getTargetId();
+            OrbitInfo oInfo = map.get(orbId);
+            if(oInfo != null) {
+                getSoln(oInfo, so);
+            } else { 
+                System.err.println("can't find object: " + orbId);
+            }
+        }
+    }
+
+    private static void getSoln(OrbitInfo oi, SpaceObject so) {
+        Orbit o = oi.makeOrbit();
+        System.out.println(oi.getName());
+        // o.printFields();
+        System.out.println();
+        double[] rState = so.getStateVector();
+        printStateVector(rState);
+        System.out.println();
+        double[][] xfer = o.getImpulse(0.0, rState);
+        printResults(xfer);
+        System.out.println();
     }
 
     private static void printStateVector(double[] v) {

@@ -22,6 +22,43 @@ class DataReader {
         }
     }
 
+    public void close() {
+        try {
+            reader.close();
+        } catch(IOException ioe) {
+        }
+    }
+
+    public SpaceObject getSpaceObject() {
+        SpaceObject object = null;
+        while(object == null) {
+            try {
+                String line = reader.readLine();
+                if(line == null) {
+                    reader.close();
+                    return null;
+                }
+                String[] objectL = line.split(";");
+                if(objectL.length != 8) {
+                    continue;
+                }
+                int o_id = Integer.parseInt(objectL[0]);
+                String o_name = objectL[1];
+                double[] o_state = new double[6];
+                for(int i = 0; i < 6; i++) {
+                    o_state[i] = Double.parseDouble(objectL[2 + i]);
+                }
+                object = new SpaceObject(o_id, o_name, o_state);
+            } catch (NumberFormatException nfe) {
+                continue;
+            } catch(Exception e) {
+                System.err.println("error reading objects: " + e);
+                e.printStackTrace();
+            }
+        }
+        return object;
+    }
+
     public OrbitInfo getOrbitData() {
         try {
             String line = reader.readLine();
