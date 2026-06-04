@@ -6,10 +6,11 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 
+
 public class GenerateTestData {
+
     public static void main(String args[]) {
         try {
-
             DataReader reader = new DataReader(args[0]);
             String outFName;
             if(args.length <= 1) {
@@ -35,7 +36,6 @@ public class GenerateTestData {
                                 rv[0], rv[1], rv[2], rv[3], rv[4], rv[5]);
                     System.out.print(sb.toString());
                     writer.write(sb.toString());
-
                 }
                 oi = reader.getOrbitData();
             }
