@@ -1,10 +1,20 @@
 
 
+/*
+ * Object to represent a spacecraft sufficiently near 
+ *      a target orbit state (e.g. space station) 
+ *      to request a state transition solution 
+ *      (i.e. initial and final impulse).
+ *
+ * Basically a class to represent a spacecraft that 
+ *      needs delta-v values to intercept.  Basically 
+ *      just a struct for convenience.
+ */
 public class SpaceObject {
 
-    int id;
-    String name;
-    double[] state;
+    int id;             // id of target
+    String name;        // name of target
+    double[] state;     // state vector
 
     SpaceObject() {
         id = 0;
@@ -20,6 +30,9 @@ public class SpaceObject {
         }
     }
 
+    /* 
+     * Getter methods.
+     */
     public int getTargetId() { return this.id; }
     public String getTargetName() { return this.name; }
 
@@ -30,7 +43,6 @@ public class SpaceObject {
         }
         return v;
     }
-
 }
 
 

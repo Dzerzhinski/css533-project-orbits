@@ -1,6 +1,7 @@
 
-// import java.io.System;
-// import StateMatrix;
+/*
+ * Simple class to test StateMatrix class function.
+ */
 
 class TestStateMatrix {
 
@@ -19,7 +20,7 @@ class TestStateMatrix {
         System.out.print("initial: \t");
         double[] deltaVi = test.initialImpulse(dr0, dv0);
         printVector(deltaVi);
-        System.out.print("final: \t");
+        System.out.print("final: \t\t");
         double[] deltaVf = test.endImpulse(dr0);
         printVector(deltaVf);
 

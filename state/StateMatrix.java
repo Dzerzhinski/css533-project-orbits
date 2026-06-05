@@ -2,30 +2,32 @@ import java.lang.Math;
 import java.io.Serializable;
 
 
+/*
+ * Class encapsulates the CW state transition function.
+ */
+
 public class StateMatrix 
         implements Serializable {
 
-    /*
-    // Don't think I need these, state matrix a t=0.
-    private double[3][3] M_i;
-    private double[3][3] N_i;
-    private double[3][3] S_i; 
-    private double[3][3] T_i; 
-    // */
-
-    private double[][] M_f;
-    private double[][] N_f;
+    private double[][] M_f;     // state transition 
+    private double[][] N_f;     //      submatrices
     private double[][] S_f; 
     private double[][] T_f; 
 
-    private double[][] N_inv_f;
+    private double[][] N_inv_f; // inverse of N
 
+    private double t_f;         // time parameter
+    private double s;           // sin(nt)
+    private double c;           // cos(nt)
+    private double n;           // mean anomaly constant
+                                // M = nt
 
-    private double t_f;
-    private double s; 
-    private double c;
-    private double n;
-
+    ///////////////////////////////////////////////////////
+    //                                                   //
+    // CONSTRUCTORS                                      //
+    //                                                   //
+    ///////////////////////////////////////////////////////
+    
     StateMatrix() {
         this(Math.PI, 1.0);
     }
@@ -38,6 +40,7 @@ public class StateMatrix
         this.n = n;
         this.t_f = t;
 
+        // init terms, matrices
         this.c = Math.cos(n * t);
         this.s = Math.sin(n * t);
 
@@ -48,6 +51,73 @@ public class StateMatrix
         this.T_f = initT(t);
     }
 
+    ///////////////////////////////////////////////////////
+    //                                                   //
+    // PUBLIC METHODS                                    //
+    //                                                   //
+    ///////////////////////////////////////////////////////
+
+
+    /*
+     * Solve for initial impulse (delta v).  Calculates the 
+     *      initial impulse for transition to target state 
+     *      at time t_f.
+     * @param initial position vector
+     * @param initial velocity vector
+     * @return delta-v vector for interception at time t
+     */
+    public double[] initialImpulse(double[] dr0, double[] dv0) {
+        // delta-v = dv0 - [-N_inv M] dr0
+        // temporary result for matrix ops
+        double[][] m = new double[3][3];
+        // 
+        m = matrixMultiply(N_inv_f, M_f);
+        // result vector
+        double[] v = new double[3];
+        v = matrixTransform(m, dr0);
+        v = invertVector(v);
+        v = vectorSub(v, dv0);
+        double dv_test = 0;
+        for(int i = 0; i < 3; i++) {
+            dv_test += v[i] * v[i];
+        }
+        dv_test = Math.sqrt(dv_test);
+        return v;
+    }
+
+    /*
+     * Solve for final impulse (delta-v).  Calculate 
+     *      the final impulse for transition to 
+     *      target state at time t_f.
+     * @param dr0 Position vector at time t=0
+     * @return final impulse for state transition
+     */
+    public double[] endImpulse(double[] dr0) {
+        // delta-v = [T Ninv M - S] dr0 
+        double[][] m = new double[3][3];
+        m = matrixMultiply(N_inv_f, M_f);
+        m = matrixMultiply(T_f, m);
+        m = matrixSub(m, S_f);
+        double[] v = new double[3];
+        v = matrixTransform(m, dr0);
+        return v;
+    }
+ 
+
+
+
+    ///////////////////////////////////////////////////////
+    //                                                   //
+    // HELPER METHODS                                    //
+    //                                                   //
+    ///////////////////////////////////////////////////////
+ 
+    /*
+     * Initialize state transition submatrices.
+     *      M, N, S, T, and inverse N.
+     * @param t time
+     * @return state transition submatrix
+     */
 
     private double[][] initM(double t) {
         double[][] M = new double[3][3];
@@ -173,6 +243,13 @@ public class StateMatrix
         return elementwiseOpMatrix(-1, o1, o2);
     }
 
+    /*
+     * Add or subtract two vectors.
+     * @param op Subtract if op < 0, add otherwise
+     * @param v1 vector operand (left)
+     * @param v2 vector operand (right)
+     * @return vector result
+     */
     private double[] elementwiseOpVector(int op, double[] v1, double[] v2) {
         double[] result = new double[3];
         for(int i = 0; i < 3; i++) {
@@ -181,16 +258,25 @@ public class StateMatrix
         return result;
     }
 
+    /*
+     * Add two vectors.
+     * @param v1 vector operand (left) 
+     * @param v2 vector operand (right)
+     * @return vector sum
+     */
     private double[] vectorAdd(double[] v1, double[] v2) {
         return elementwiseOpVector(1, v1, v2);
     }
 
+    /*
+     * Subtract two vectors.
+     * @param v1 minuend (left)
+     * @param v2 subtrahend (right)
+     * @return vector difference
+     */
     private double[] vectorSub(double[] v1, double[] v2) {
         return elementwiseOpVector(-1, v1, v2);
     }
-
-
-
 
     /*
      * Apply (multiply) a matrix A to a vector x, i.e. Ax = y.
@@ -209,6 +295,11 @@ public class StateMatrix
         return result;
     }
 
+    /*
+     * Get vector additive inverse (negative).
+     * @param vector operand
+     * @preturn inverse of vector (-v)
+     */
     private double[] invertVector(double[] v) {
         double[] r = new double[3];
         for(int i = 0; i < 3; i++) {
@@ -217,6 +308,10 @@ public class StateMatrix
         return r;
     }
 
+    /*
+     * Print out matrix to stdout.  Used for debugging.
+     * @param m Matrix to print
+     */
     private void printMatrix(double[][] m) {
         for(int i = 0; i < 3; i++) {
             System.out.print("\t\t| ");
@@ -228,69 +323,16 @@ public class StateMatrix
         System.out.println();
     }
 
+    /*
+     * Print out vector to stdout.  Used for debugging.
+     * @param v Vector to print.
+     */
     private void printVector(double[] v) {
         for(int i = 0; i < v.length; i++) {
             System.out.printf("\t\t| %4.4f |\n", v[i]);
         }
         System.out.println();
     }
-
-
-    public double[] initialImpulse(double[] dr0, double[] dv0) {
-        //System.out.printf("n = %4.4f\t\ts = %4.4f\t\tt = %4.4f\n", n, s, t_f);
-        //double[][] test1 = matrixMultiply(N_f, N_inv_f);
-        //System.out.println("Ninv N = I?");
-        //printMatrix(test1);
-        // System.out.println("T: ");
-        // printMatrix(T_f);
-        // System.out.println("S: ");
-        // printMatrix(S_f);
-        double[][] m = new double[3][3];
-        //System.out.println("N");
-        //printMatrix(N_f);
-        //System.out.println("N inverse: ");
-        //printMatrix(N_inv_f);
-        //System.out.println("M");
-        //printMatrix(M_f);
-        //double[] test2 = matrixTransform(M_f, dr0);
-        //System.out.println("testing different order: ");
-        //printVector(test2);
-        //test2 = matrixTransform(N_inv_f, test2);
-        //printVector(test2);
-        m = matrixMultiply(N_inv_f, M_f);
-        double[] v = new double[3];
-        v = matrixTransform(m, dr0);
-        v = invertVector(v);
-        v = vectorSub(v, dv0);
-        double dv_test = 0;
-        for(int i = 0; i < 3; i++) {
-            dv_test += v[i] * v[i];
-        }
-        dv_test = Math.sqrt(dv_test);
-        // System.out.printf("abs value delta v: %4.4f", dv_test);
-        return v;
-    }
-
-    public double[] endImpulse(double[] dr0) {
-        double[][] m = new double[3][3];
-        m = matrixMultiply(N_inv_f, M_f);
-        m = matrixMultiply(T_f, m);
-        m = matrixSub(m, S_f);
-        double[] v = new double[3];
-        v = matrixTransform(m, dr0);
-        /*
-        System.out.println("end impulse: ");
-        printVector(v);
-        double foo = 0;
-        for(int i = 0; i < 3; i++) {
-            foo += v[i] * v[i];
-        }
-        foo = Math.sqrt(foo);
-        System.out.printf("abs value end impulse: %4.6f\n\n", foo);
-        // */
-        return v;
-    }
-
 }
 
 

@@ -1,6 +1,11 @@
 import java.lang.Math;
 import java.io.Serializable;
 
+/*
+ * Represents a target orbit.  Solves state transtion 
+ *      problem for impulse to transition to target 
+ *      orbit.
+ */
 class Orbit 
         implements Serializable {
 
@@ -47,6 +52,10 @@ class Orbit
         };
     }
 
+    /*
+     * Takes state vector and Kepler elements of 
+     *      orbit.  Required for correct function.
+     */
     Orbit(double[] r_0, 
             double[] v_0, 
             double axis, 
@@ -78,7 +87,7 @@ class Orbit
     
     /*
      * Get impulse vectors (initial and final) for orbit state 
-     *      transition.  Defaults to half-orbit period for 
+     *      transition.  Defaults to 3/4-orbit period for 
      *      transition.
      * @param stateVec orbit state vector
      * @return array with initial and final impulse vectors
@@ -92,62 +101,56 @@ class Orbit
     /*
      * Get impulse vectors (initial and final) for orbit state transition 
      *      at given time.
-     * @param t_f time for intercept (from now)
+     * @param t_f time for intercept (from now), if 0.0 replaced 
+     *      with 3/4-orbit period
      * @param stateVec orbit state vector ([position velocity])
      * @return array, [[<inital time, <impulse vector>], 
      *                 [<final time, <impulse vector>]]
      */
     public double[][] getImpulse(double tf_req, double[] stateVec) {
         double t_f;
+        // if null parameter, replace with 3/4 period
         if(tf_req == 0.0) {
             t_f = getThreeQuarterOrbit();
         } else {
             t_f = tf_req;
         }
+        // sanity check to avoid zero divisor when 
+        //      calculating state matrix
         if(Math.sin(t_f * n_mean) < EPSILON) {
             t_f += 2 * Math.asin(EPSILON);
         }
 
-        // double t_f = (tf_req < EPSILON) ? getHalfOrbitPeriod() : tf_req;
-        //System.err.printf("t_f: %4.4f\n", t_f);
+        // initialize state transition matrix
         this.state = new StateMatrix(t_f, n_mean);
+        // initialize reference frame transform class
         Frame refFrame = new Frame();
+        // unnecessary steps splitting state vector
         double[] posVec = new double[]{stateVec[0], stateVec[1], stateVec[2]};
         double[] velVec = new double[]{stateVec[3], stateVec[4], stateVec[5]};
+        // transform to target reference frame
         double[] tfmState = refFrame.transformToFrame(posVec, velVec);
-        //double[] foo = new double[]{tfmState[3], tfmState[4], tfmState[5]};
-        // double[] testTfm = refFrame.transformdVFromFrame(foo, posVec);
         double[] tfmPosVec = new double[3];
         double[] tfmVelVec = new double[3];
         for(int i = 0; i < 3; i++) {
             tfmPosVec[i] = tfmState[i];
             tfmVelVec[i] = tfmState[3 + i];
         }
-        /*
-        System.out.println("pos: ");
-        printVector(tfmPosVec);
-        System.out.println("vel: ");
-        printVector(tfmVelVec);
-        // */
+        // solve for initial impulse
         double[] impulse1 = state.initialImpulse(tfmPosVec, tfmVelVec);
+        // transform to ECI
         double[] impulse1t = refFrame.transformdVFromFrame(impulse1);
-        // printVector(impulse1);
-        //printVector(impulse1t);
         double i1fnorm = getNorm(impulse1);
         double i1tnorm = getNorm(impulse1t);
-        // System.out.printf("impulse 1, mag: %4.6f\n", i1fnorm);
-        // System.out.printf("impluse 1 tfm, mag: %4.6f\n\n", i1tnorm);
 
+        // get true anomaly at time t_f (point in orbit at time t_f)
         double f_t = findfAtTime(t_f);
+        // get reference frame at time t_f
         Frame refFrame2 = new Frame(f_t);
         double[] impulse2 = state.endImpulse(tfmPosVec);
         double[] impulse2t = refFrame2.transformdVFromFrame(impulse2);
-        // printVector(impulse2);
-        //printVector(impulse2t);
         double i2fnorm = getNorm(impulse2);
         double i2tnorm = getNorm(impulse2t);
-        //System.out.printf("impulse 2, mag: %4.6f\n", i2fnorm);
-        //System.out.printf("impulse 2 tfm, mag: %4.6f\n\n", i2tnorm);
         double[][] res = new double[2][4];
         res[0][0] = 0.0;
         res[1][0] = t_f;
@@ -164,6 +167,9 @@ class Orbit
     //                                                   //
     ///////////////////////////////////////////////////////
     
+    /*
+     * Print orbit characteristics to stdout.  For debugging.
+     */
     public void printFields() {
         System.out.printf("position: [%4.4f, %4.4f, %4.4f]\n", r[0], r[1], r[2]);
         System.out.printf("velocity: [%4.4f, %4.4f, %4.4f]\n", v[0], v[1], v[2]);
@@ -217,10 +223,19 @@ class Orbit
     //                                                   //
     ///////////////////////////////////////////////////////
 
+    /*
+     * Get 3/4 of orbit period.  Good default time.
+     * @return 3/4 period
+     */
     private double getThreeQuarterOrbit() {
         return (3 * Math.PI) / (2 * n_mean);
     }
 
+    /*
+     * Get norm (magnitude) of vector.
+     * @param v Vector to norm
+     * @return Norm (magnitude) of vector
+     */
     private double getNorm(double[] v) {
         double res = 0;
         for(int i = 0; i < v.length; i++) {
@@ -229,10 +244,10 @@ class Orbit
         return Math.sqrt(res);
     }
 
-
-
-
-
+    /*
+     * Get time at periapse (perigee).
+     * @return true anomaly
+     */
     private double getTimePeriapsisTrue() {
         // tan (E/2) = sqrt(1 - e/ 1 + e) tan(f/2)
         double E = getEfromf(this.f);
@@ -327,15 +342,23 @@ class Orbit
 
 
 
+    /*
+     * Helper class to encapsulate change of reference 
+     *      frame to/from ECI.
+     */
     private class Frame {
+        // basis vectors
         private double[] x_hat;
         private double[] y_hat;
         private double[] z_hat;
 
+        // target state vector
         private double[] r_f;
         private double[] v_f;
 
+        // store trig function results for reuse
         private double[] eulerAngTrig;
+        // true anomaly at given time
         private double fNow;
 
         Frame() { 
@@ -386,18 +409,6 @@ class Orbit
             double v_norm = vectorNorm(v);
             this.y_hat = unitVector(v_norm, v);
             this.z_hat = vectorCrossProduct(this.x_hat, this.y_hat);
-
-            /*
-            double[] x0 = new double[]{x_hat[0], y_hat[0], z_hat[0]};
-            double[] x1 = new double[]{x_hat[1], y_hat[1], z_hat[1]};
-            double[] x2 = new double[]{x_hat[2], y_hat[2], z_hat[2]};
-            double[] foo = vectorCrossProduct(x1, x2);
-            double bar = 0;
-            for(int i = 0; i < 3; i++) {
-                bar += x0[i] * foo[i];
-            }
-            System.out.printf("det of basis matrix: %4.4f\n\n", bar);
-            // */
         }
 
         private void setEulerAngles() {
@@ -436,6 +447,9 @@ class Orbit
             return res;
         }
 
+        /*
+         * Get basis matrix for debugging.
+         */
         public double[][] testBasisMatrix() {
             return(getBasisMatrix());
         }
@@ -450,6 +464,9 @@ class Orbit
             return basis;
         }
 
+        /*
+         * Get basis matrix for target-to-ECI transform.
+         */
         private double[][] getReverseBasisMatrix() {
             double[][] basis = new double[3][3];
             for(int i = 0; i < 3; i++) {
@@ -546,24 +563,16 @@ class Orbit
             return unit;
         }
 
+
         /*
+         * Transform impulse (delta-v) vector from target 
+         *      reference frame to ECI.
+         */
         public double[] transformdVFromFrame(double[] dv) {
-            return transformdVFromFrame(dv, r_f);
-        }
-        // */
-
-
-        public double[] transformdVFromFrame(double[] dv) {
-            // double[] dr = vectorSub(r_pos, r_f);
             double[] res;
             double theta = fNow + o;
             double[][] tMatrix = getReverseBasisMatrix();
-
             res = vectorTfm(tMatrix, dv);
-            // res = vectorAdd(res, v_f);
-            // r dtheta y_hat?
-            // double[] angVel = vectorCrossProduct(vectorScale(n_mean, z_hat), dr);
-            // res = vectorAdd(res, angVel);
             return res;
         }
 

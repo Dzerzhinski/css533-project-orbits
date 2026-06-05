@@ -1,5 +1,15 @@
 
 
+/*
+ * Class encapsulates target orbit state data.  Basically 
+ *      a struct for relevant data.  Includes, 
+ *          - id (a unique identifier within the dataset)
+ *          - name of target
+ *          - state vector
+ *          - Kepler elements
+ *      Can generate the Orbit object that implements the 
+ *      functionality to find orbit intercept solutions.
+ */
 class OrbitInfo {
 
     int id;
@@ -16,22 +26,19 @@ class OrbitInfo {
 
     OrbitInfo() {}
 
-    OrbitInfo(int nmbr) {
-        this.id = nmbr;
-    }
+    OrbitInfo(int nmbr) { this.id = nmbr; }
 
-    public void setName(String n) {
-        this.name = n;
-    }
 
+    /*
+     * Setter methods.
+     */
+    public void setName(String n) { this.name = n; }
     public void setPos(double x, double y, double z) {
         this.pos = new double[]{x, y, z};
     }
-
     public void setVel(double x, double y, double z) {
         this.vel = new double[]{x, y, z};
     }
-
     public void setAxis(double a) { this.axis = a; }
     public void setEcc(double e) { this.ecc = e; }
     public void setInclin(double i) { this.inc = i; }
@@ -40,9 +47,16 @@ class OrbitInfo {
     public void setF(double f) { this.f_true = f; }
     public void setM(double M) { this.M_mean = M; }
 
+    /*
+     * Getter methods.
+     */
     public int getId() { return this.id; }
     public String getName() { return this.name; }
 
+    /*
+     * Essentially a getter method for orbit data as well 
+     *      as a quasi-factory class.
+     */
     public Orbit makeOrbit() {
         Orbit o = new Orbit(
                 this.pos, 

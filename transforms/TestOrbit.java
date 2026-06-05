@@ -1,4 +1,7 @@
 
+/*
+ * Test basic Orbit class features.
+ */
 class TestOrbit {
 
     public static void main(String args[]) {
@@ -14,6 +17,7 @@ class TestOrbit {
         double[] r2 = new double[]{1612.75, 5310.19, 3750.33};
         double[] v2 = new double[]{-7.35321, 0.463856, 2.46920};
 
+        // problem taken from ORBITAL MECHANICS FOR ENGINEERING STUDENTS
         double[] rv2 = new double[]{1612.75, 5310.19, 3750.33, -7.35321, 0.463856, 2.46920};
         Orbit test2 = new Orbit(r1, v1, 300.0 + 6.37812e3, 1.0, 40.0, 20.0, 0.0, 0.0, 0.0);
         // test2.testBasis();
@@ -31,10 +35,6 @@ class TestOrbit {
         System.out.printf("impulse, initial t: %4.4f, dv: %4.4f\n", res1[0][0], dv_val);
         System.out.printf("impulse, final t: %4.4f, dv: %4.4f\n", res1[1][0], dv_val2);
         printResult(res1);
-
-        
-
-
     }
 
 
